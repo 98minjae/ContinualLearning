@@ -1,5 +1,5 @@
-# Online Continual Learning
-ASER Code Analysis
+# Online Class-Incremental Continual Learning with Adversarial Shapley Value
+Code Analysis
 
 ## 명령어 (run)
 python general_main.py --data cifar100 --cl_type nc --agent ER --update ASER --retrieve ASER --mem_size 5000 --aser_type asvm --n_smp_cls 1.5 --k 3 
