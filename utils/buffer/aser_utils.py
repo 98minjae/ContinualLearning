@@ -26,7 +26,7 @@ def compute_knn_sv(model, eval_x, eval_y, cand_x, cand_y, k, device="cpu"):
     # Get deep features
     eval_df, cand_df = deep_features(model, eval_x, n_eval, cand_x, n_cand)
     # Sort indices based on distance in deep feature space
-    sorted_ind_mat = sorted_cand_ind(eval_df, cand_df, n_eval, n_cand)
+    sorted_ind_mat = sorted_cand_ind(eval_df, cand_df, n_eval, n_cand) # 작은값 ... 큰값
 
     # Evaluation set labels
     el = eval_y

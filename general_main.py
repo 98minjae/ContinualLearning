@@ -7,6 +7,10 @@ from utils.utils import boolean_string
 
 
 def main(args):
+    '''
+    1. argument 지정
+    2. multiple_run -> experiment/run.py
+    '''
     print(args)
     # set up seed
     np.random.seed(args.seed)

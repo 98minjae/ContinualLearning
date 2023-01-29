@@ -19,7 +19,7 @@ class Buffer(torch.nn.Module):
         buffer_size = params.mem_size
         print('buffer has %d slots' % buffer_size)
         input_size = input_size_match[params.data]
-        buffer_img = maybe_cuda(torch.FloatTensor(buffer_size, *input_size).fill_(0))
+        buffer_img = maybe_cuda(torch.FloatTensor(buffer_size, *input_size).fill_(0)) # input_size: [3, 32, 32] (CIFAR100)
         buffer_label = maybe_cuda(torch.LongTensor(buffer_size).fill_(0))
 
         # registering as buffer allows us to save the object using `torch.save`
@@ -30,6 +30,7 @@ class Buffer(torch.nn.Module):
         self.update_method = name_match.update_methods[params.update](params)
         self.retrieve_method = name_match.retrieve_methods[params.retrieve](params)
 
+        # Keep track of buffer with a dictionary
         if self.params.buffer_tracker:
             self.buffer_tracker = BufferClassTracker(n_classes[params.data], self.device)
 

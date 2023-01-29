@@ -47,7 +47,7 @@ class CIFAR100(DatasetBase):
             labels = set(y_train)
         elif self.scenario == 'nc':
             labels = self.task_labels[cur_task]
-            x_train, y_train = load_task_with_labels(self.train_data, self.train_label, labels)
+            x_train, y_train = load_task_with_labels(self.train_data, self.train_label, labels) # 'train_data'와 'train_label'중 'label'과 일치한 데이터 중에 첫번째 불러오기 
         return x_train, y_train, labels
 
     def new_run(self, **kwargs):

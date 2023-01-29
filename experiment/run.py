@@ -18,10 +18,11 @@ def multiple_run(params, store=False, save_path=None):
     # Set up data stream
     start = time.time()
     print('Setting up data stream')
-    data_continuum = continuum(params.data, params.cl_type, params)
+    data_continuum = continuum(params.data, params.cl_type, params) # 데이터셋 준비 (setup)
     data_end = time.time()
     print('data setup time: {}'.format(data_end - start))
 
+    # 저장 파일 만들기
     if store:
         result_path = load_yaml('config/global.yml', key='path')['result']
         table_path = result_path + params.data
@@ -31,14 +32,14 @@ def multiple_run(params, store=False, save_path=None):
             save_path = params.model_name + '_' + params.data_name + '.pkl'
 
     accuracy_list = []
-    for run in range(params.num_runs):
+    for run in range(params.num_runs): # num_runs (default = 1)
         tmp_acc = []
         run_start = time.time()
-        data_continuum.new_run()
-        model = setup_architecture(params)
-        model = maybe_cuda(model, params.cuda)
-        opt = setup_opt(params.optimizer, model, params.learning_rate, params.weight_decay)
-        agent = agents[params.agent](model, opt, params)
+        data_continuum.new_run() # 새로운 테스크 데이터 가져오기
+        model = setup_architecture(params) # cifar100 -> Reduced_ResNet18
+        model = maybe_cuda(model, params.cuda) # 모델 cuda로 변환
+        opt = setup_opt(params.optimizer, model, params.learning_rate, params.weight_decay) # 최적화 설정
+        agent = agents[params.agent](model, opt, params) # 버퍼 초기화 및 (업데이트, 추출) 방법 불러오기
 
         # prepare val data loader
         test_loaders = setup_test_loader(data_continuum.test_data(), params)
@@ -46,8 +47,8 @@ def multiple_run(params, store=False, save_path=None):
             for i, (x_train, y_train, labels) in enumerate(data_continuum):
                 print("-----------run {} training batch {}-------------".format(run, i))
                 print('size: {}, {}'.format(x_train.shape, y_train.shape))
-                agent.train_learner(x_train, y_train)
-                acc_array = agent.evaluate(test_loaders)
+                agent.train_learner(x_train, y_train) # 학습 (버퍼 retrieve + update)
+                acc_array = agent.evaluate(test_loaders) # 평가
                 tmp_acc.append(acc_array)
             run_end = time.time()
             print(

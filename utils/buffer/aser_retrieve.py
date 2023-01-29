@@ -23,7 +23,7 @@ class ASER_retrieve(object):
 
         if buffer.n_seen_so_far <= self.mem_size:
             # Use random retrieval until buffer is filled
-            ret_x, ret_y = random_retrieve(buffer, self.num_retrieve)
+            ret_x, ret_y = random_retrieve(buffer, self.num_retrieve) # 랜덤으로 샘플 10개 추출
         else:
             # Use ASER retrieval if buffer is filled
             cur_x, cur_y = kwargs['x'], kwargs['y']
@@ -54,14 +54,14 @@ class ASER_retrieve(object):
 
         # Get candidate data for retrieval (i.e., cand <- class balanced subsamples from memory)
         cand_x, cand_y, cand_ind = \
-            ClassBalancedRandomSampling.sample(buffer_x, buffer_y, self.n_smp_cls, device=self.device)
+            ClassBalancedRandomSampling.sample(buffer_x, buffer_y, self.n_smp_cls, device=self.device) # 랜덤으로 canidate 샘플 가져오기
 
         # Type 1 - Adversarial SV
         # Get evaluation data for type 1 (i.e., eval <- current input)
-        eval_adv_x, eval_adv_y = cur_x, cur_y
+        eval_adv_x, eval_adv_y = cur_x, cur_y # 현재 테스크 데이터를 evaluation 샘플로 설정
         # Compute adversarial Shapley value of candidate data
         # (i.e., sv wrt current input)
-        sv_matrix_adv = compute_knn_sv(model, eval_adv_x, eval_adv_y, cand_x, cand_y, self.k, device=self.device)
+        sv_matrix_adv = compute_knn_sv(model, eval_adv_x, eval_adv_y, cand_x, cand_y, self.k, device=self.device) # ASV값 계산
 
         if self.aser_type != "neg_sv":
             # Type 2 - Cooperative SV
@@ -76,7 +76,7 @@ class ASER_retrieve(object):
                 compute_knn_sv(model, eval_coop_x, eval_coop_y, cand_x, cand_y, self.k, device=self.device)
             if self.aser_type == "asv":
                 # Use extremal SVs for computation
-                sv = sv_matrix_coop.max(0).values - sv_matrix_adv.min(0).values
+                sv = sv_matrix_coop.max(0).values - sv_matrix_adv.min(0).values # 논문에 있는 식 (max(s)-min(s))
             else:
                 # Use mean variation for aser_type == "asvm" or anything else
                 sv = sv_matrix_coop.mean(0) - sv_matrix_adv.mean(0)
