@@ -1,0 +1,3 @@
+[submodule "i-Blurry"]
+	path = i-Blurry
+	url = https://github.com/naver-ai/i-Blurry.git
