@@ -20,13 +20,12 @@ from utils.method_manager import select_method
 
 def main():
     args = config.base_parser()
-
+    # 파일에 있는 로깅 설정 불러오기
     logging.config.fileConfig("./configuration/logging.conf")
     logger = logging.getLogger()
-
-    os.makedirs(f"results/{args.dataset}/{args.note}", exist_ok=True)
-    os.makedirs(f"tensorboard/{args.dataset}/{args.note}", exist_ok=True)
-    fileHandler = logging.FileHandler(f'results/{args.dataset}/{args.note}/seed_{args.rnd_seed}.log', mode="w")
+    os.makedirs(f"results/{args.dataset}/{args.note}", exist_ok=True) # dataset: cifar-10(default), note: clib(default)
+    os.makedirs(f"tensorboard/{args.dataset}/{args.note}", exist_ok=True) # dataset: cifar-10(default), note: clib(default)
+    fileHandler = logging.FileHandler(f'results/{args.dataset}/{args.note}/seed_{args.rnd_seed}.log', mode="w") # rnd_seed: [1 2 3]
 
     formatter = logging.Formatter(
         "[%(levelname)s] %(filename)s:%(lineno)d > %(message)s"
@@ -55,9 +54,9 @@ def main():
     random.seed(args.rnd_seed)
 
     # Transform Definition
-    mean, std, n_classes, inp_size, _ = get_statistics(dataset=args.dataset)
-    train_transform = []
-    if "cutout" in args.transforms:
+    mean, std, n_classes, inp_size, _ = get_statistics(dataset=args.dataset) # 평균, 표준편차, 클래스 수, 입력이미지 크기
+    train_transform = [] # ['cutmix', 'autoaug'] (default): torchvision.transforms (X)
+    if "cutout" in args.transforms: # arg.size크기의 zero patch를 가진 이미지 크기의 mask 생성 
         train_transform.append(Cutout(size=16))
         if args.gpu_transform:
             args.gpu_transform = False
@@ -101,19 +100,19 @@ def main():
         ]
     )
 
-    logger.info(f"[1] Select a CIL method ({args.mode})")
+    logger.info(f"[1] Select a CIL method ({args.mode})") # mode: CLIB (default)
     criterion = nn.CrossEntropyLoss(reduction="mean")
-    method = select_method(
-        args, criterion, device, train_transform, test_transform, n_classes
+    method = select_method( # CLIB 방식 불러오기
+        args, criterion, device, train_transform, test_transform, n_classes 
     )
 
     logger.info(f"[2] Incrementally training {args.n_tasks} tasks")
     task_records = defaultdict(list)
     eval_results = defaultdict(list)
     samples_cnt = 0
-    test_datalist = get_test_datalist(args.dataset)
+    test_datalist = get_test_datalist(args.dataset) # json file: 평가 데이터 불러오기 {class, filename, label}
 
-    for cur_iter in range(args.n_tasks):
+    for cur_iter in range(args.n_tasks): # n_tasks: 5 (default)
         if args.mode == "joint" and cur_iter > 0:
             return
 
@@ -122,16 +121,16 @@ def main():
         print("#" * 50 + "\n")
         logger.info("[2-1] Prepare a datalist for the current task")
 
-        # get datalist
+        # get datalist ('m','n'에 따른 학습데이터 불러오기) {class, filename, label}
         cur_train_datalist = get_train_datalist(args.dataset, args.n_tasks, args.m, args.n, args.rnd_seed, cur_iter)
 
         # Reduce datalist in Debug mode
-        if args.debug:
+        if args.debug: # 디버깅하기 위해 학습데이트 축소
             cur_train_datalist = cur_train_datalist[:2000]
             random.shuffle(test_datalist)
             test_datalist = test_datalist[:2000]
 
-        method.online_before_task(cur_iter)
+        method.online_before_task(cur_iter) # task-free: 아무것도 안함
         for i, data in enumerate(cur_train_datalist):
             samples_cnt += 1
             method.online_step(data, samples_cnt, args.n_worker)
@@ -140,7 +139,7 @@ def main():
                 eval_results["test_acc"].append(eval_dict['avg_acc'])
                 eval_results["avg_acc"].append(eval_dict['cls_acc'])
                 eval_results["data_cnt"].append(samples_cnt)
-        method.online_after_task(cur_iter)
+        method.online_after_task(cur_iter) # task-free: 아무것도 안함
         eval_dict = method.online_evaluate(test_datalist, samples_cnt, 512, args.n_worker)
         task_acc = eval_dict['avg_acc']
 
