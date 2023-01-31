@@ -220,10 +220,10 @@ class MemoryDataset(Dataset):
 
     def add_new_class(self, cls_list):
         self.cls_list = cls_list
-        self.cls_count.append(0)
-        self.cls_idx.append([])
-        self.cls_dict = {self.cls_list[i]:i for i in range(len(self.cls_list))}
-        self.cls_train_cnt = np.append(self.cls_train_cnt, 0)
+        self.cls_count.append(0) # 클래스 데이터 수 추가
+        self.cls_idx.append([]) # 클래스 데이터 인댁스 추가
+        self.cls_dict = {self.cls_list[i]:i for i in range(len(self.cls_list))} # 클래스 dictionary 재생성
+        self.cls_train_cnt = np.append(self.cls_train_cnt, 0) # 학습 클래수 수 추가
 
     def __getitem__(self, idx):
         sample = dict()
@@ -244,10 +244,10 @@ class MemoryDataset(Dataset):
             self.score[idx] = score
 
     def replace_sample(self, sample, idx=None):
-        self.cls_count[self.cls_dict[sample['klass']]] += 1
+        self.cls_count[self.cls_dict[sample['klass']]] += 1 # 해당 클래스 데이터 수 증가
         if idx is None:
-            self.cls_idx[self.cls_dict[sample['klass']]].append(len(self.images))
-            self.datalist.append(sample)
+            self.cls_idx[self.cls_dict[sample['klass']]].append(len(self.images)) # 클래스 데이터 인덱스에 상응하는 인덱스에 이미지 array 추가
+            self.datalist.append(sample) # 데이터 리스트에 데이터 추가
             try:
                 img_name = sample['file_name']
             except KeyError:
@@ -259,13 +259,13 @@ class MemoryDataset(Dataset):
             img = PIL.Image.open(img_path).convert('RGB')
             if self.transform_on_gpu:
                 img = self.transform_cpu(img)
-            self.images.append(img)
-            self.labels.append(self.cls_dict[sample['klass']])
+            self.images.append(img) # 이미지 데이터 추가 
+            self.labels.append(self.cls_dict[sample['klass']]) # 이미지 레이블 추가
             if self.save_test == 'gpu':
                 self.device_img.append(self.test_transform(img).to(self.device).unsqueeze(0))
             elif self.save_test == 'cpu':
                 self.device_img.append(self.test_transform(img).unsqueeze(0))
-            if self.cls_count[self.cls_dict[sample['klass']]] == 1:
+            if self.cls_count[self.cls_dict[sample['klass']]] == 1: # 두개이상 값이 있으면 평균 계산
                 self.others_loss_decrease = np.append(self.others_loss_decrease, 0)
             else:
                 self.others_loss_decrease = np.append(self.others_loss_decrease, np.mean(self.others_loss_decrease[self.cls_idx[self.cls_dict[sample['klass']]][:-1]]))

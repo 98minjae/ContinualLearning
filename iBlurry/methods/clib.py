@@ -47,12 +47,12 @@ class CLIB(ER):
         self.current_lr = self.lr
 
     def online_step(self, sample, sample_num, n_worker):
-        if sample['klass'] not in self.exposed_classes:
+        if sample['klass'] not in self.exposed_classes: # 현재까지 본 클래스가 아닌 경우 추가
             self.add_new_class(sample['klass'])
         self.update_memory(sample)
-        self.num_updates += self.online_iter
+        self.num_updates += self.online_iter # 메모리 업데이트 횟수
         if self.num_updates >= 1:
-            train_loss, train_acc = self.online_train([], self.batch_size, n_worker,
+            train_loss, train_acc = self.online_train([], self.batch_size, n_worker, # stream 데이터와 메모리 데이터로 학습 (+손실값 차이 계산) 
                                                       iterations=int(self.num_updates), stream_batch_size=0)
             self.report_training(sample_num, train_loss, train_acc)
             self.num_updates -= int(self.num_updates)
@@ -82,8 +82,8 @@ class CLIB(ER):
                 memory_data = self.memory.get_batch(memory_batch_size)
                 x.append(memory_data['image'])
                 y.append(memory_data['label'])
-            x = torch.cat(x)
-            y = torch.cat(y)
+            x = torch.cat(x) # stream + 메모리 
+            y = torch.cat(y) # stream + 메모리 
 
             x = x.to(self.device)
             y = y.to(self.device)
@@ -100,7 +100,7 @@ class CLIB(ER):
             else:
                 loss.backward()
                 self.optimizer.step()
-            self.samplewise_loss_update()
+            self.samplewise_loss_update() # 손실값 차이 계산
 
             total_loss += loss.item()
             correct += torch.sum(preds == y.unsqueeze(1)).item()
@@ -110,28 +110,28 @@ class CLIB(ER):
 
     def add_new_class(self, class_name):
         self.exposed_classes.append(class_name)
-        self.num_learned_class = len(self.exposed_classes)
-        prev_weight = copy.deepcopy(self.model.fc.weight.data)
-        self.model.fc = nn.Linear(self.model.fc.in_features, self.num_learned_class).to(self.device)
+        self.num_learned_class = len(self.exposed_classes) 
+        prev_weight = copy.deepcopy(self.model.fc.weight.data) # 기존 model.fc 가중치 따로 저장
+        self.model.fc = nn.Linear(self.model.fc.in_features, self.num_learned_class).to(self.device) # model.fc 수정
 
         with torch.no_grad():
             if self.num_learned_class > 1:
-                self.model.fc.weight[:self.num_learned_class - 1] = prev_weight
-        sdict = copy.deepcopy(self.optimizer.state_dict())
+                self.model.fc.weight[:self.num_learned_class - 1] = prev_weight # 기존 fc 가중치 수정된 fc에 추가
+        sdict = copy.deepcopy(self.optimizer.state_dict()) 
         fc_params = sdict['param_groups'][1]['params']
-        if len(sdict['state']) > 0:
+        if len(sdict['state']) > 0: # optimizer(state) fc weight, bias 따로 저장
             fc_weight_state = sdict['state'][fc_params[0]]
             fc_bias_state = sdict['state'][fc_params[1]]
         for param in self.optimizer.param_groups[1]['params']:
-            if param in self.optimizer.state.keys():
+            if param in self.optimizer.state.keys(): # 기존 optimizer(state) fc 가중치 제거
                 del self.optimizer.state[param]
-        del self.optimizer.param_groups[1]
-        self.optimizer.add_param_group({'params': self.model.fc.parameters()})
+        del self.optimizer.param_groups[1] # 기존 optimizer(param_groups) fc 가중치 제거
+        self.optimizer.add_param_group({'params': self.model.fc.parameters()}) # 새로운 fc에 넣은 가중치 optimizer(param_group)에 추가
         if len(sdict['state']) > 0:
             if 'adam' in self.opt_name:
                 fc_weight = self.optimizer.param_groups[1]['params'][0]
                 fc_bias = self.optimizer.param_groups[1]['params'][1]
-                self.optimizer.state[fc_weight]['step'] = fc_weight_state['step']
+                self.optimizer.state[fc_weight]['step'] = fc_weight_state['step'] # 기존 fc weight 추가
                 self.optimizer.state[fc_weight]['exp_avg'] = torch.cat([fc_weight_state['exp_avg'],
                                                                         torch.zeros([1, fc_weight_state['exp_avg'].size(
                                                                             dim=1)]).to(self.device)], dim=0)
@@ -139,15 +139,15 @@ class CLIB(ER):
                                                                            torch.zeros([1, fc_weight_state[
                                                                                'exp_avg_sq'].size(dim=1)]).to(
                                                                                self.device)], dim=0)
-                self.optimizer.state[fc_bias]['step'] = fc_bias_state['step']
+                self.optimizer.state[fc_bias]['step'] = fc_bias_state['step'] # 기존 fc bias 추가
                 self.optimizer.state[fc_bias]['exp_avg'] = torch.cat([fc_bias_state['exp_avg'],
                                                                       torch.tensor([0]).to(
                                                                           self.device)], dim=0)
                 self.optimizer.state[fc_bias]['exp_avg_sq'] = torch.cat([fc_bias_state['exp_avg_sq'],
                                                                          torch.tensor([0]).to(
                                                                              self.device)], dim=0)
-        self.memory.add_new_class(cls_list=self.exposed_classes)
-        if 'reset' in self.sched_name:
+        self.memory.add_new_class(cls_list=self.exposed_classes) # 새로운 클래스에 대해 메모리 재설정
+        if 'reset' in self.sched_name: # learning rate scheduling 
             self.update_schedule(reset=True)
 
     def update_schedule(self, reset=False):
@@ -177,24 +177,24 @@ class CLIB(ER):
                             [self.model(torch.cat(x[i * batchsize:min((i + 1) * batchsize, len(x))]).to(self.device))
                              for i in range(-(-len(x) // batchsize))], dim=0)
 
-                    loss = F.cross_entropy(logit, y, reduction='none').cpu().numpy()
+                    loss = F.cross_entropy(logit, y, reduction='none').cpu().numpy() # stream+메모리 데이터 학습 loss
                 self.memory.update_loss_history(loss, self.loss, ema_ratio=ema_ratio, dropped_idx=self.memory_dropped_idx)
                 self.memory_dropped_idx = []
                 self.loss = loss
 
     def samplewise_importance_memory(self, sample):
-        if len(self.memory.images) >= self.memory_size:
+        if len(self.memory.images) >= self.memory_size: # 처리한 이미지 데이터 수가 메모리 사이즈보다 커질 경우
             label_frequency = copy.deepcopy(self.memory.cls_count)
             label_frequency[self.exposed_classes.index(sample['klass'])] += 1
-            cls_to_replace = np.argmax(np.array(label_frequency))
+            cls_to_replace = np.argmax(np.array(label_frequency)) # 가장 많이 나타난 클래스에서 데이터 찾기
             cand_idx = self.memory.cls_idx[cls_to_replace]
             score = self.memory.others_loss_decrease[cand_idx]
-            idx_to_replace = cand_idx[np.argmin(score)]
-            self.memory.replace_sample(sample, idx_to_replace)
+            idx_to_replace = cand_idx[np.argmin(score)] # 가장 많이 나타난 클래스 데이터 중 loss를 가장 덜 떨어트리는 데이터 찾기
+            self.memory.replace_sample(sample, idx_to_replace) # 메모리 업데이트
             self.dropped_idx.append(idx_to_replace)
             self.memory_dropped_idx.append(idx_to_replace)
-        else:
-            self.memory.replace_sample(sample)
+        else: # 아직 메모리 사이즈보다 작을 경우 
+            self.memory.replace_sample(sample) # 메모리 업데이트
             self.dropped_idx.append(len(self.memory) - 1)
             self.memory_dropped_idx.append(len(self.memory) - 1)
 
