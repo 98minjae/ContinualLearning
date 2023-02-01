@@ -16,7 +16,7 @@ python main.py --mode $MODE --dataset $DATASET --n_tasks $N_TASKS --m $M --n $N 
 
 ## clib.py
 * online_step()
-    * add_new_class() 
+    * add_new_class() -> samplewise_importance_memory()
         * 현재까지 본 클래스가 아닌 경우 추가
         * 기존 model.fc 가중치 따로 저장 -> model.fc 수정 -> 기존 fc 가중치 수정된 fc에 추가
         * 기존 optimizer(state) fc 가중치 따로 저장 -> 기존 optimizer(state, params_group) fc 가중치 제거 -> 새로운 fc에 넣은 가중치 optimizer에 추가
