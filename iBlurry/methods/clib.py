@@ -20,7 +20,7 @@ writer = SummaryWriter("tensorboard")
 class CLIB(ER):
     def __init__(self, criterion, device, train_transform, test_transform, n_classes, **kwargs):
         super().__init__(criterion, device, train_transform, test_transform, n_classes, **kwargs)
-        self.memory_size = kwargs["memory_size"]
+        self.memory_size = kwargs["memory_size"] # memory size: 500(default)
 
         # Samplewise importance variables
         self.loss = np.array([])
@@ -30,7 +30,7 @@ class CLIB(ER):
         self.memory = MemoryDataset(self.dataset, self.train_transform, self.exposed_classes,
                                     test_transform=self.test_transform, data_dir=self.data_dir, device=self.device,
                                     transform_on_gpu=self.gpu_transform, save_test='cpu', keep_history=True)
-        self.imp_update_period = kwargs['imp_update_period']
+        self.imp_update_period = kwargs['imp_update_period'] # 중요도 업데이트 주기: 1 (default)
         if kwargs["sched_name"] == 'default':
             self.sched_name = 'adaptive_lr'
 

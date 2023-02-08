@@ -27,3 +27,5 @@ python main.py --mode $MODE --dataset $DATASET --n_tasks $N_TASKS --m $M --n $N 
         * 메모리 업데이트 (메모리가 차있을 경우 현재까지 개수가 가장 많은 클래스 데이터 중에서 손실값이 가장 덜 떨어트리는 데이터 제거 후 대체)
     * online_train()
         * stream 데이터와 메모리 데이터로 학습 (+손실값 차이 계산)
+
+# seed_1.log: CIFAR10 24시간 학습시킨 결과 (Sample #1~#37264)
