@@ -28,4 +28,6 @@ python main.py --mode $MODE --dataset $DATASET --n_tasks $N_TASKS --m $M --n $N 
     * online_train()
         * stream 데이터와 메모리 데이터로 학습 (+손실값 차이 계산)
 
-## seed_1.log: CIFAR10 24시간 학습시킨 결과 (Sample #1~#37264)
+## seed_1.log:
+CLIB(iBlurry): CIFAR10 24시간 학습시킨 결과 (Sample #1~#37264)
+
