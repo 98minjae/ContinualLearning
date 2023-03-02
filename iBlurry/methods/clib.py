@@ -159,7 +159,7 @@ class CLIB(ER):
 
     def samplewise_loss_update(self, ema_ratio=0.90, batchsize=512):
         self.imp_update_counter += 1
-        if self.imp_update_counter % self.imp_update_period == 0:
+        if self.imp_update_counter % self.imp_update_period == 0: # imp_update_period = 1 (default)
             if len(self.memory) > 0:
                 self.model.eval()
                 with torch.no_grad():
@@ -185,8 +185,8 @@ class CLIB(ER):
     def samplewise_importance_memory(self, sample):
         if len(self.memory.images) >= self.memory_size: # 처리한 이미지 데이터 수가 메모리 사이즈보다 커질 경우
             label_frequency = copy.deepcopy(self.memory.cls_count)
-            label_frequency[self.exposed_classes.index(sample['klass'])] += 1
-            cls_to_replace = np.argmax(np.array(label_frequency)) # 가장 많이 나타난 클래스에서 데이터 찾기
+            label_frequency[self.exposed_classes.index(sample['klass'])] += 1 # 클래스 수 업데이트
+            cls_to_replace = np.argmax(np.array(label_frequency)) # 가장 많이 나타난 클래스에서 뺄 데이터 찾기
             cand_idx = self.memory.cls_idx[cls_to_replace]
             score = self.memory.others_loss_decrease[cand_idx]
             idx_to_replace = cand_idx[np.argmin(score)] # 가장 많이 나타난 클래스 데이터 중 loss를 가장 덜 떨어트리는 데이터 찾기

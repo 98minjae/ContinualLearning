@@ -104,7 +104,7 @@ def main():
     criterion = nn.CrossEntropyLoss(reduction="mean")
     method = select_method( # CLIB 방식 불러오기
         args, criterion, device, train_transform, test_transform, n_classes 
-    )
+    ) # Continual learning 방식 초기화
 
     logger.info(f"[2] Incrementally training {args.n_tasks} tasks")
     task_records = defaultdict(list)
